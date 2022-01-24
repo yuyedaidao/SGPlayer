@@ -80,7 +80,17 @@ typedef NS_ENUM(NSUInteger, SGPlayerItemState) {
 /**
  *
  */
+- (BOOL)seekToTime:(CMTime)time;
+
+/**
+ *
+ */
 - (BOOL)seekToTime:(CMTime)time result:(SGSeekResult)result;
+
+/**
+ *
+ */
+- (BOOL)seekToTime:(CMTime)time toleranceBefor:(CMTime)toleranceBefor toleranceAfter:(CMTime)toleranceAfter result:(SGSeekResult)result;
 
 /**
  *
@@ -96,11 +106,6 @@ typedef NS_ENUM(NSUInteger, SGPlayerItemState) {
  *
  */
 - (BOOL)isFinished:(SGMediaType)type;
-
-/**
- *
- */
-@property (nonatomic, copy) SGAudioDescriptor *audioDescriptor;
 
 /**
  *

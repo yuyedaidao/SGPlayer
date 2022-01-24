@@ -12,6 +12,7 @@
 @interface SGMutilDemuxer ()
 
 @property (nonatomic, strong, readonly) NSArray<id<SGDemuxable>> *demuxers;
+@property (nonatomic, strong, readonly) NSMutableArray<SGTrack *> *finishedTracksInternal;
 @property (nonatomic, strong, readonly) NSMutableArray<id<SGDemuxable>> *finishedDemuxers;
 @property (nonatomic, strong, readonly) NSMutableDictionary<NSString *, NSValue *> *timeStamps;
 
@@ -28,6 +29,7 @@
     if (self = [super init]) {
         self->_demuxers = demuxables;
         self->_finishedDemuxers = [NSMutableArray array];
+        self->_finishedTracksInternal = [NSMutableArray array];
     }
     return self;
 }
@@ -58,7 +60,17 @@
     return self->_demuxers.firstObject.options;
 }
 
+- (NSArray<SGTrack *> *)finishedTracks
+{
+    return self->_finishedTracksInternal.copy;
+}
+
 #pragma mark - Control
+
+- (id<SGDemuxable>)sharedDemuxer
+{
+    return nil;
+}
 
 - (NSError *)open
 {
@@ -110,17 +122,23 @@
 
 - (NSError *)seekToTime:(CMTime)time
 {
+    return [self seekToTime:time toleranceBefor:kCMTimeInvalid toleranceAfter:kCMTimeInvalid];
+}
+
+- (NSError *)seekToTime:(CMTime)time toleranceBefor:(CMTime)toleranceBefor toleranceAfter:(CMTime)toleranceAfter
+{
     if (!CMTIME_IS_NUMERIC(time)) {
         return SGCreateError(SGErrorCodeInvlidTime, SGActionCodeFormatSeekFrame);
     }
     for (id<SGDemuxable> obj in self->_demuxers) {
-        NSError *error = [obj seekToTime:time];
+        NSError *error = [obj seekToTime:time toleranceBefor:toleranceBefor toleranceAfter:toleranceAfter];
         if (error) {
             return error;
         }
     }
     [self->_timeStamps removeAllObjects];
     [self->_finishedDemuxers removeAllObjects];
+    [self->_finishedTracksInternal removeAllObjects];
     return nil;
 }
 
@@ -148,7 +166,7 @@
             }
         }
         if (!demuxable) {
-            return SGCreateError(SGErrorCodeMutilDemuxerEndOfFile, SGActionCodeMutilDemuxerNext);
+            return SGCreateError(SGErrorCodeDemuxerEndOfFile, SGActionCodeMutilDemuxerNext);
         }
         error = [demuxable nextPacket:packet];
         if (error) {
@@ -156,6 +174,7 @@
                 break;
             }
             [self->_finishedDemuxers addObject:demuxable];
+            [self->_finishedTracksInternal addObjectsFromArray:demuxable.tracks];
             continue;
         }
         CMTime decodeTimeStamp = (*packet).decodeTimeStamp;

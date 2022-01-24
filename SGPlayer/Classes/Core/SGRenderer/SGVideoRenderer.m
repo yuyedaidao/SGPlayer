@@ -25,6 +25,7 @@
         NSUInteger framesFetched;
         NSUInteger framesDisplayed;
         NSTimeInterval currentFrameEndTime;
+        NSTimeInterval currentFrameBeginTime;
     } _flags;
     SGCapacity _capacity;
 }
@@ -51,6 +52,25 @@
 
 @synthesize rate = _rate;
 @synthesize delegate = _delegate;
+
++ (NSArray<NSNumber *> *)supportedPixelFormats
+{
+    return @[
+        @(AV_PIX_FMT_BGRA),
+        @(AV_PIX_FMT_NV12),
+        @(AV_PIX_FMT_YUV420P),
+    ];
+}
+
++ (BOOL)isSupportedInputFormat:(int)format
+{
+    for (NSNumber *obj in [self supportedPixelFormats]) {
+        if (format == obj.intValue) {
+            return YES;
+        }
+    }
+    return NO;
+}
 
 - (instancetype)init
 {
@@ -179,6 +199,8 @@
         self->_flags.hasNewFrame = NO;
         self->_flags.framesFetched = 0;
         self->_flags.framesDisplayed = 0;
+        self->_flags.currentFrameEndTime = 0;
+        self->_flags.currentFrameBeginTime = 0;
         self->_capacity = SGCapacityCreate();
         return ^{b1();};
     }, ^BOOL(SGBlock block) {
@@ -233,6 +255,8 @@
         self->_flags.hasNewFrame = NO;
         self->_flags.framesFetched = 0;
         self->_flags.framesDisplayed = 0;
+        self->_flags.currentFrameEndTime = 0;
+        self->_flags.currentFrameBeginTime = 0;
         return nil;
     }, ^BOOL(SGBlock block) {
         self->_metalView.paused = NO;
@@ -307,6 +331,7 @@
             self->_currentFrame = newFrame;
             self->_flags.hasNewFrame = YES;
             self->_flags.framesFetched += 1;
+            self->_flags.currentFrameBeginTime = currentMediaTime;
             self->_flags.currentFrameEndTime = currentMediaTime + CMTimeGetSeconds(duration);
             if (self->_frameOutput) {
                 [newFrame lock];
@@ -319,7 +344,12 @@
                 [self->_clock setVideoTime:time];
             };
         } else if (currentMediaTime < self->_flags.currentFrameEndTime) {
+            CMTime time = self->_currentFrame.timeStamp;
+            time = CMTimeAdd(time, SGCMTimeMakeWithSeconds(currentMediaTime - self->_flags.currentFrameBeginTime));
             capacity.duration = SGCMTimeMakeWithSeconds(self->_flags.currentFrameEndTime - currentMediaTime);
+            b2 = ^{
+                [self->_clock setVideoTime:time];
+            };
         }
         if (!SGCapacityIsEqual(self->_capacity, capacity)) {
             self->_capacity = capacity;
@@ -336,11 +366,17 @@
 
 - (void)drawInMTKView:(MTKView *)view
 {
+    if (!view.superview ||
+        (view.frame.size.width <= 1 &&
+         view.frame.size.height <= 1)) {
+        return;
+    }
     [self->_lock lock];
     SGVideoFrame *frame = self->_currentFrame;
-    NSUInteger width = frame.descriptor.width;
-    NSUInteger height = frame.descriptor.height;
-    if (!frame || width == 0 || height == 0) {
+    SGRational presentationSize = frame.descriptor.presentationSize;
+    if (!frame ||
+        presentationSize.num == 0 ||
+        presentationSize.den == 0) {
         [self->_lock unlock];
         return;
     }
@@ -374,8 +410,11 @@
     if (rotate && (rotate % 90) == 0) {
         float radians = GLKMathDegreesToRadians(-rotate);
         baseMatrix = GLKMatrix4RotateZ(baseMatrix, radians);
-        width = frame.descriptor.width * ABS(cos(radians)) + frame.descriptor.height * ABS(sin(radians));
-        height = frame.descriptor.width * ABS(sin(radians)) + frame.descriptor.height * ABS(cos(radians));
+        SGRational size = {
+            presentationSize.num * ABS(cos(radians)) + presentationSize.den * ABS(sin(radians)),
+            presentationSize.num * ABS(sin(radians)) + presentationSize.den * ABS(cos(radians)),
+        };
+        presentationSize = size;
     }
     NSArray<id<MTLTexture>> *textures = nil;
     if (frame.pixelBuffer) {
@@ -398,7 +437,7 @@
     if (drawableSize.width == 0 || drawableSize.height == 0) {
         return;
     }
-    MTLSize textureSize = MTLSizeMake(width, height, 0);
+    MTLSize textureSize = MTLSizeMake(presentationSize.num, presentationSize.den, 0);
     MTLSize layerSize = MTLSizeMake(drawable.texture.width, drawable.texture.height, 0);
     switch (displayMode) {
         case SGDisplayModePlane: {
@@ -513,6 +552,7 @@
     if (self->_view != view) {
         self->_view = view;
         [self updateMetalView];
+        [self updateTimeInterval];
     }
 }
 
@@ -586,7 +626,12 @@
 - (void)updateTimeInterval
 {
     self->_fetchTimer.timeInterval = 0.5 / self->_preferredFramesPerSecond;
-    self->_metalView.preferredFramesPerSecond = self->_preferredFramesPerSecond;
+    if (self->_view &&
+        self->_view == self->_metalView.superview) {
+        self->_metalView.preferredFramesPerSecond = self->_preferredFramesPerSecond;
+    } else {
+        self->_metalView.preferredFramesPerSecond = 1;
+    }
 }
 
 @end

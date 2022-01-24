@@ -31,7 +31,7 @@ typedef NS_ENUM(NSUInteger, SGDecodeLoopState) {
 /**
  *
  */
-- (instancetype)initWithDecodableClass:(Class)decodableClass;
+- (instancetype)initWithDecoderClass:(Class)decoderClass;
 
 /**
  *
@@ -100,6 +100,6 @@ typedef NS_ENUM(NSUInteger, SGDecodeLoopState) {
 /**
  *
  */
-- (void)decodeLoop:(SGDecodeLoop *)decodeLoop didOutputFrame:(__kindof SGFrame *)frame;
+- (void)decodeLoop:(SGDecodeLoop *)decodeLoop didOutputFrames:(NSArray<__kindof SGFrame *> *)frames needsDrop:(BOOL(^)(void))needsDrop;
 
 @end

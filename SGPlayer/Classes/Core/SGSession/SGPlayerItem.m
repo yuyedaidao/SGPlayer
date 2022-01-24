@@ -47,7 +47,6 @@
         self->_frameOutput.delegate = self;
         self->_audioQueue = [[SGObjectQueue alloc] init];
         self->_videoQueue = [[SGObjectQueue alloc] init];
-        self->_audioDescriptor = [[SGAudioDescriptor alloc] init];
         for (int i = 0; i < 8; i++) {
             self->_capacityFlags[i] = NO;
             self->_capacities[i] = SGCapacityCreate();
@@ -233,10 +232,20 @@ SGSet1Map(void, setDecoderOptions, SGDecoderOptions *, self->_frameOutput)
     return self->_frameOutput.seekable;
 }
 
+- (BOOL)seekToTime:(CMTime)time
+{
+    return [self seekToTime:time result:nil];
+}
+
 - (BOOL)seekToTime:(CMTime)time result:(SGSeekResult)result
 {
+    return [self seekToTime:time toleranceBefor:kCMTimeInvalid toleranceAfter:kCMTimeInvalid result:result];
+}
+
+- (BOOL)seekToTime:(CMTime)time toleranceBefor:(CMTime)toleranceBefor toleranceAfter:(CMTime)toleranceAfter result:(SGSeekResult)result
+{
     SGWeakify(self)
-    return ![self->_frameOutput seekToTime:time result:^(CMTime time, NSError *error) {
+    return ![self->_frameOutput seekToTime:time toleranceBefor:toleranceBefor toleranceAfter:toleranceAfter result:^(CMTime time, NSError *error) {
         SGStrongify(self)
         if (!error) {
             SGLockEXE10(self->_lock, ^SGBlock {
@@ -307,7 +316,6 @@ SGSet1Map(void, setDecoderOptions, SGDecoderOptions *, self->_frameOutput)
                     self->_audioSelection.tracks = @[audio.firstObject];
                     self->_audioSelection.weights = @[@(1.0)];
                     self->_audioProcessor = [[self->_processorOptions.audioClass alloc] init];
-                    [self->_audioProcessor setDescriptor:self->_audioDescriptor];
                     [self->_audioProcessor setSelection:self->_audioSelection action:action];
                 }
                 if (video.count > 0) {
@@ -375,30 +383,42 @@ SGSet1Map(void, setDecoderOptions, SGDecoderOptions *, self->_frameOutput)
     });
 }
 
-- (void)frameOutput:(SGFrameOutput *)frameOutput didOutputFrame:(__kindof SGFrame *)frame
+- (void)frameOutput:(SGFrameOutput *)frameOutput didOutputFrames:(NSArray<__kindof SGFrame *> *)frames needsDrop:(BOOL (^)(void))needsDrop
 {
-    __block __kindof SGFrame *obj = frame;
-    [obj lock];
     SGLockEXE10(self->_lock, ^SGBlock {
-        SGMediaType type = obj.track.type;
-        if (type == SGMediaTypeAudio) {
-            obj = [self->_audioProcessor putFrame:obj];
-            if (!obj) {
-                return nil;
-            }
-            [self->_audioQueue putObjectSync:obj];
-            return [self setFrameQueueCapacity:SGMediaTypeAudio];
-        } else if (type == SGMediaTypeVideo) {
-            obj = [self->_videoProcessor putFrame:obj];
-            if (!obj) {
-                return nil;
-            }
-            [self->_videoQueue putObjectSync:obj];
-            return [self setFrameQueueCapacity:SGMediaTypeVideo];
+        if (needsDrop && needsDrop()) {
+            return nil;
         }
-        return nil;
+        BOOL hasAudio = NO, hasVideo = NO;
+        NSArray<__kindof SGFrame *> *objs = frames;
+        for (NSInteger i = 0; i < objs.count; i++) {
+            __kindof SGFrame *obj = objs[i];
+            [obj lock];
+            SGMediaType type = obj.track.type;
+            if (type == SGMediaTypeAudio) {
+                obj = [self->_audioProcessor putFrame:obj];
+                if (obj) {
+                    hasAudio = YES;
+                    [self->_audioQueue putObjectSync:obj];
+                }
+            } else if (type == SGMediaTypeVideo) {
+                obj = [self->_videoProcessor putFrame:obj];
+                if (obj) {
+                    hasVideo = YES;
+                    [self->_videoQueue putObjectSync:obj];
+                }
+            }
+            [obj unlock];
+        }
+        SGBlock b1 = ^{}, b2 = ^{};
+        if (hasAudio) {
+            b1 = [self setFrameQueueCapacity:SGMediaTypeAudio];
+        }
+        if (hasVideo) {
+            b2 = [self setFrameQueueCapacity:SGMediaTypeVideo];
+        }
+        return ^{b1(); b2();};
     });
-    [obj unlock];
 }
 
 #pragma mark - Capacity
@@ -429,10 +449,14 @@ SGSet1Map(void, setDecoderOptions, SGDecoderOptions *, self->_frameOutput)
     SGCapacity capacity = SGCapacityCreate();
     if (type == SGMediaTypeAudio) {
         capacity = self->_audioQueue.capacity;
-        capacity = SGCapacityAdd(capacity, self->_audioProcessor.capacity);
+        if (self->_audioProcessor) {
+            capacity = SGCapacityAdd(capacity, self->_audioProcessor.capacity);
+        }
     } else if (type == SGMediaTypeVideo) {
         capacity = self->_videoQueue.capacity;
-        capacity = SGCapacityAdd(capacity, self->_videoProcessor.capacity);
+        if (self->_videoProcessor) {
+            capacity = SGCapacityAdd(capacity, self->_videoProcessor.capacity);
+        }
     }
     return capacity;
 }

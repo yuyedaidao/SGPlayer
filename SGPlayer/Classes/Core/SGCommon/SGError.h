@@ -14,8 +14,6 @@ typedef NS_ENUM(NSUInteger, SGErrorCode) {
     SGErrorCodeNoValidFormat,
     SGErrorCodeFormatNotSeekable,
     SGErrorCodePacketOutputCancelSeek,
-    SGErrorCodeURLDemuxerFunnelFinished,
-    SGErrorCodeMutilDemuxerEndOfFile,
     SGErrorCodeDemuxerEndOfFile,
     SGErrorCodeInvlidTime,
 };
@@ -34,6 +32,7 @@ typedef NS_ENUM(NSUInteger, SGActionCode) {
     SGActionCodeURLDemuxerFunnelNext,
     SGActionCodeMutilDemuxerNext,
     SGActionCodeSegmentDemuxerNext,
+    SGActionCodeNextFrame,
 };
 
 NSError * SGGetFFError(int result, SGActionCode operation);

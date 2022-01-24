@@ -8,7 +8,6 @@
 
 #import "SGPaddingDemuxer.h"
 #import "SGPacket+Internal.h"
-#import "SGObjectPool.h"
 #import "SGError.h"
 
 @interface SGPaddingDemuxer ()
@@ -24,6 +23,7 @@
 @synthesize delegate = _delegate;
 @synthesize metadata = _metadata;
 @synthesize duration = _duration;
+@synthesize finishedTracks = _finishedTracks;
 
 - (instancetype)initWithDuration:(CMTime)duration
 {
@@ -35,6 +35,11 @@
 }
 
 #pragma mark - Control
+
+- (id<SGDemuxable>)sharedDemuxer
+{
+    return nil;
+}
 
 - (NSError *)open
 {
@@ -53,6 +58,11 @@
 
 - (NSError *)seekToTime:(CMTime)time
 {
+    return [self seekToTime:time toleranceBefor:kCMTimeInvalid toleranceAfter:kCMTimeInvalid];
+}
+
+- (NSError *)seekToTime:(CMTime)time toleranceBefor:(CMTime)toleranceBefor toleranceAfter:(CMTime)toleranceAfter
+{
     if (!CMTIME_IS_NUMERIC(time)) {
         return SGCreateError(SGErrorCodeInvlidTime, SGActionCodeFormatSeekFrame);
     }
@@ -69,13 +79,13 @@
     }
     CMTime timeStamp = self->_lasttime;
     CMTime duration = CMTimeSubtract(self->_duration, self->_lasttime);
-    SGPacket *pkt = [[SGObjectPool sharedPool] objectWithClass:[SGPacket class] reuseName:[SGPacket commonReuseName]];
+    SGPacket *pkt = [SGPacket packet];
+    pkt.flags |= SGDataFlagPadding;
     pkt.core->size = 1;
     pkt.core->pts = av_rescale(AV_TIME_BASE, timeStamp.value, timeStamp.timescale);
     pkt.core->dts = av_rescale(AV_TIME_BASE, timeStamp.value, timeStamp.timescale);
     pkt.core->duration = av_rescale(AV_TIME_BASE, duration.value, duration.timescale);
     SGCodecDescriptor *cd = [[SGCodecDescriptor alloc] init];
-    cd.type = SGCodecTypePadding;
     cd.timebase = AV_TIME_BASE_Q;
     [pkt setCodecDescriptor:cd];
     [pkt fill];

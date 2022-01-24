@@ -23,6 +23,7 @@
 {
     SGMutableTrack *obj = [super copyWithZone:zone];
     obj->_segments = [self->_segments mutableCopy];
+    obj->_subTracks = [self->_subTracks copy];
     return obj;
 }
 
@@ -34,9 +35,24 @@
     return self;
 }
 
-- (NSArray<SGSegment *> *)segments
+- (void *)coreptr
 {
-    return [self->_segments copy];
+    return [self core];
+}
+
+- (AVStream *)core
+{
+    void *ret = [super core];
+    if (ret) {
+        return ret;
+    }
+    for (SGTrack *obj in self->_subTracks) {
+        if (obj.core) {
+            ret = obj.core;
+            break;
+        }
+    }
+    return ret;
 }
 
 - (BOOL)appendSegment:(SGSegment *)segment

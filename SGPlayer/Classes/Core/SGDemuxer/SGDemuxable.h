@@ -17,7 +17,7 @@
 /**
  *
  */
-@property (nonatomic, strong) SGDemuxerOptions *options;
+@property (nonatomic, copy) SGDemuxerOptions *options;
 
 /**
  *
@@ -32,12 +32,22 @@
 /**
  *
  */
+@property (nonatomic, copy, readonly) NSArray<SGTrack *> *finishedTracks;
+
+/**
+ *
+ */
 @property (nonatomic, copy, readonly) NSDictionary *metadata;
 
 /**
  *
  */
 @property (nonatomic, readonly) CMTime duration;
+
+/**
+ *
+ */
+- (id<SGDemuxable>)sharedDemuxer;
 
 /**
  *
@@ -58,6 +68,11 @@
  *
  */
 - (NSError *)seekToTime:(CMTime)time;
+
+/**
+ *
+ */
+- (NSError *)seekToTime:(CMTime)time toleranceBefor:(CMTime)toleranceBefor toleranceAfter:(CMTime)toleranceAfter;
 
 /**
  *

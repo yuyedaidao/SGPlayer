@@ -13,7 +13,8 @@
 + (NSArray<SGVideoItem *> *)videoItems
 {
     NSURL *i_see_fire = [[NSBundle mainBundle] URLForResource:@"i-see-fire" withExtension:@"mp4"];
-    NSURL *google_help_vr = [[NSBundle mainBundle] URLForResource:@"google-help-vr" withExtension:@"mp4"];
+//    NSURL *google_help_vr = [[NSBundle mainBundle] URLForResource:@"google-help-vr" withExtension:@"mp4"];
+    NSURL *google_help_vr = [NSURL URLWithString:@"https://camvod.iqilu.com//live-sdlianghui2022vr--20220123072053.m3u8?wsStart=1642899590&wsEnd=1642906200"];
     
     NSMutableArray *items = [NSMutableArray array];
     {

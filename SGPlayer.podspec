@@ -92,7 +92,7 @@ Pod::Spec.new do |spec|
   spec.source_files  = "SGPlayer/Classes/*.{h,m}", "SGPlayer/Classes/Core/*.{h,m}"
   # spec.exclude_files = "Classes/Exclude"
 
-  spec.public_header_files = "SGPlayer/Classes/SGPlayer.framework/Headers/*.{h,m}"
+  spec.public_header_files = "SGPlayer/Classes/SGPlayer.framework/Headers/*.h"
 
 
   # ――― Resources ―――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――――― #

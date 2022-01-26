@@ -175,6 +175,7 @@
 				9C886B8F1E78EC9F00F2CFD1 /* Sources */,
 				9C886B901E78EC9F00F2CFD1 /* Frameworks */,
 				9C886B911E78EC9F00F2CFD1 /* Resources */,
+				55CC2D7927A0E14200C8B180 /* ShellScript */,
 			);
 			buildRules = (
 			);
@@ -196,7 +197,7 @@
 				TargetAttributes = {
 					9C886B921E78EC9F00F2CFD1 = {
 						CreatedOnToolsVersion = 8.2.1;
-						DevelopmentTeam = 79WDBYQ4TC;
+						DevelopmentTeam = GP4MMMES25;
 						ProvisioningStyle = Automatic;
 						SystemCapabilities = {
 							com.apple.BackgroundModes = {
@@ -239,6 +240,26 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		55CC2D7927A0E14200C8B180 /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path\n";
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		9C886B8F1E78EC9F00F2CFD1 /* Sources */ = {
@@ -387,7 +408,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 79WDBYQ4TC;
+				DEVELOPMENT_TEAM = GP4MMMES25;
 				INFOPLIST_FILE = "demo-ios/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -395,7 +416,7 @@
 					"-all_load",
 					"-Objc",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.libobjc.SGPlayer.demo-ios";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.iqilu.SGPlayer.demo-ios";
 				PRODUCT_NAME = SGPlayer;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 			};
@@ -407,7 +428,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = 79WDBYQ4TC;
+				DEVELOPMENT_TEAM = GP4MMMES25;
 				INFOPLIST_FILE = "demo-ios/Info.plist";
 				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
@@ -415,7 +436,7 @@
 					"-all_load",
 					"-Objc",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = "com.libobjc.SGPlayer.demo-ios";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.iqilu.SGPlayer.demo-ios";
 				PRODUCT_NAME = SGPlayer;
 				PROVISIONING_PROFILE_SPECIFIER = "";
 			};

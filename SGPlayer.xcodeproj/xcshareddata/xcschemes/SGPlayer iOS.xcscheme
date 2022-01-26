@@ -10,7 +10,7 @@
             ActionType = "Xcode.IDEStandardExecutionActionsCore.ExecutionActionType.ShellScriptAction">
             <ActionContent
                title = "Run Script"
-               scriptText = "# Type a script or drag a script file from your workspace to insert its path.&#10;echo &apos;=========&apos;&#10;echo &apos;&#x62f7;&#x8d1d;SGPlayer.framework&#x5230;Classes&apos;&#10;cp -R $CODESIGNING_FOLDER_PATH &quot;${PROJECT_DIR}/SGPlayer/Classes/SGPlayer.framework&quot;&#10;echo &apos;=========&apos;&#10;">
+               scriptText = "# Type a script or drag a script file from your workspace to insert its path.&#10;echo &quot;&#x62f7;&#x8d1d;SGPlayer.framework&quot;&#10;sh $PROJECT_DIR&quot;/cp_player.sh&quot;&#10;echo &quot;&#x5b8c;&#x6210;&#x62f7;&#x8d1d;&quot;&#10;">
                <EnvironmentBuildable>
                   <BuildableReference
                      BuildableIdentifier = "primary"
